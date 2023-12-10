@@ -11,7 +11,7 @@ typedef struct{
 
 typedef struct{
 
-	point_t generator;
+	point_t *generator;
 	mpz_t a;
 	mpz_t b;
 	mpz_t p;
@@ -115,12 +115,12 @@ point_t
     mpz_mul(lymda, old_lymda, old_lymda);
     mpz_mul_si(x, old_x, 2);
     mpz_sub(x, lymda, x);
-    mpz_fdiv_q(point->x, x, p);
+    mpz_mod(point->x, x, p);
 
     mpz_sub(x, old_x, x);
     mpz_mul(lymda, old_lymda, x);
     mpz_sub(y, lymda, old_y);
-    mpz_fdiv_q(point->y, y, p);
+    mpz_mod(point->y, y, p);
 
     mpz_clear(x); mpz_clear(y); mpz_clear(lymda);
     mpz_clear(old_x); mpz_clear(old_y); mpz_clear(old_lymda);
@@ -134,8 +134,8 @@ point_t
 point_t
 *point_addition(point_t *point1, point_t *point2, mpz_t a, mpz_t b, mpz_t p){
 
-	if(!is_on_curve(point1, a, b, p)){}
-	if(!is_on_curve(point2, a, b, p)){}
+//	if(!is_on_curve(point1, a, b, p)){}
+//	if(!is_on_curve(point2, a, b, p)){}
 
 	if(point1 == NULL)
 		return point2;
@@ -164,12 +164,12 @@ point_t
         mpz_mul(lymda, old_lymda, old_lymda);
         mpz_sub(x, lymda, x1);
         mpz_sub(x, x, x2);
-        mpz_fdiv_q(point1->x, x, p);
+        mpz_mod(point1->x, x, p);
 
         mpz_sub(x, x1, point1->x);
         mpz_mul(lymda, old_lymda, x);
         mpz_sub(y, lymda, y1);
-        mpz_fdiv_q(point1->y, y, p);
+        mpz_mod(point1->y, y, p);
 
         return point1;
 	}
@@ -195,7 +195,7 @@ point_t
 
 //	if(!is_on_curve(point, a, b, p))
 //		return NULL;
-    printf("1\n");
+
 	if(point == NULL)
 		return NULL;
 
@@ -240,15 +240,20 @@ main(){
     gmp_printf("lymda: %Zd\n", lymda);     */
 
     curve_t curve;
+    curve.generator = (point_t*)malloc(sizeof(point_t));
     mpz_t secure_key;
-    mpz_init(curve.generator.x); mpz_init(curve.generator.x);
+    mpz_init(curve.generator->x); mpz_init(curve.generator->y);
     mpz_init(curve.a); mpz_init(curve.b); mpz_init(curve.p); mpz_init(curve.cofactor);
     mpz_init(secure_key);
+    const char *generator_x = "602046282375688656758213480587526111916698976636884684818";
+    const char *generator_y = "174050332293622031404857552280219410364023488927386650641";
+    const char *a = "6277101735386680763835789423207666416083908700390324961276";
+    const char *b = "2455155546008943817740293915197451784769108058161191238065";
+    const char *p = "6277101735386680763835789423207666416083908700390324961279";
+    mpz_set_str(curve.generator->x, generator_x, 10); mpz_set_str(curve.generator->y, generator_y, 10);
+    mpz_set_str(curve.a, a, 10); mpz_set_str(curve.b, b, 10), mpz_set_str(curve.p, p, 10); mpz_set_si(secure_key, 6);
 
-    mpz_set_si(curve.generator.x, 15); mpz_set_si(curve.generator.y, 13);
-    mpz_set_si(curve.a, 0); mpz_set_si(curve.b, 7), mpz_set_si(curve.p, 17); mpz_set_si(secure_key, 6);
-
-    point_t *public_key = scalar_multiply(&curve.generator, secure_key, curve.a, curve.b, curve.p);
+    point_t *public_key = scalar_multiply(curve.generator, secure_key, curve.a, curve.b, curve.p);
     gmp_printf("public_key: (%Zd ; %Zd)\n", public_key->x, public_key->y);
 
     return 0;
