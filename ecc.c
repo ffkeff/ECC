@@ -1,7 +1,6 @@
 #include <gmp.h>
-#include <stdlib.h>
-#include <fcntl.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 typedef struct{
 
@@ -148,7 +147,7 @@ point_t
 
     if(mpz_cmp(point1->x, point2->x) != 0){
 
-        mpz_t x, y,x1, x2, y1, y2, lymda, old_lymda;
+        mpz_t x, y, x1, x2, y1, y2, lymda, old_lymda;
 
         mpz_init(x1); mpz_init(x2); mpz_init(y1);
         mpz_init(y2); mpz_init(lymda); mpz_init(old_lymda);
@@ -171,6 +170,8 @@ point_t
         mpz_sub(y, lymda, y1);
         mpz_mod(point1->y, y, p);
 
+        mpz_clear(x); mpz_clear(y); mpz_clear(x1); mpz_clear(x2);
+        mpz_clear(y1); mpz_clear(y2); mpz_clear(lymda); mpz_clear(old_lymda);
         return point1;
 	}
 
@@ -228,17 +229,9 @@ point_t
 }
 
 int
-main(){
+main(int argc, char *argv[], char **env){
 
-/*    mpz_t a, b, p, lymda;
-
-    mpz_init(a); mpz_init(b); mpz_init(p); mpz_init(lymda);
-
-    mpz_set_si(a, 24); mpz_set_si(b, 675); mpz_set_si(p, 17);
-
-    solution(a, b, p, lymda);
-    gmp_printf("lymda: %Zd\n", lymda);     */
-
+    /*create a curve secp192r1*/
     curve_t curve;
     curve.generator = (point_t*)malloc(sizeof(point_t));
     mpz_t secure_key;
@@ -250,11 +243,19 @@ main(){
     const char *a = "6277101735386680763835789423207666416083908700390324961276";
     const char *b = "2455155546008943817740293915197451784769108058161191238065";
     const char *p = "6277101735386680763835789423207666416083908700390324961279";
-    mpz_set_str(curve.generator->x, generator_x, 10); mpz_set_str(curve.generator->y, generator_y, 10);
-    mpz_set_str(curve.a, a, 10); mpz_set_str(curve.b, b, 10), mpz_set_str(curve.p, p, 10); mpz_set_si(secure_key, 6);
 
+    mpz_set_str(curve.generator->x, generator_x, 10); mpz_set_str(curve.generator->y, generator_y, 10);
+    mpz_set_str(curve.a, a, 10); mpz_set_str(curve.b, b, 10), mpz_set_str(curve.p, p, 10);
+
+    /*set secure key from client/server*/
+    const char *key = argv[1];
+    mpz_set_str(secure_key, key, 10);
+
+    /*create a public key by secure key*/
     point_t *public_key = scalar_multiply(curve.generator, secure_key, curve.a, curve.b, curve.p);
-    gmp_printf("public_key: (%Zd ; %Zd)\n", public_key->x, public_key->y);
+
+    /*transfer public key to pipe*/
+    gmp_printf("%Zd;%Zd", public_key->x, public_key->y);
 
     return 0;
 }
